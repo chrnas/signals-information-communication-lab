@@ -52,6 +52,7 @@ function x = sender(xQ, xI)
     chirp_end = 1 - Ts_high;
     chirp_time = (0:Ts_high:chirp_end)';
     chirp_signal = chirp(chirp_time, chirp_lower_limit, chirp_end, chirp_upper_limit);
+    
     %% Add chirp to x-signal
     x = cat(1, chirp_signal, x_no_chirp);
 end

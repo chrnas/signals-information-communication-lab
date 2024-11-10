@@ -11,11 +11,14 @@ function [zI, zQ, A, tau] = receiver(y)
     Ts_low = 1 / fs_low;        % Sampling period time
     Ts_high = 1 / fs_high;  % Upsampled sampling period time
     order = 500;
+
     %% Create bandpass filter
     bpf_margin = 0.9;
     [b,a] = fir1(order,[fc-bandwidth*bpf_margin,fc+bandwidth*bpf_margin]/(fs_high/2),"bandpass");
+
     %% Apply bandpass filter
     y=filter(b,a,[y;zeros(order/2,1)]);  % Filter signal
+
     %% Remove zeroes from y
     y=y(order/2+1:end);
 
@@ -26,21 +29,30 @@ function [zI, zQ, A, tau] = receiver(y)
     chirp_end = 1 - Ts_high;
     chirp_time = (0:Ts_high:chirp_end)';
     chirp_signal = chirp(chirp_time, chirp_lower_limit, chirp_end, chirp_upper_limit);
+
     %% Correllation
     [corr, lag] = xcorr(y, chirp_signal);
+
     %% Get max peak and its index
     [max_peak, max_peak_index] = max((abs(corr)));
+
     %% Adjust tau based on where the max peak is by getting it from lag
     tau = (lag(max_peak_index)/fs_high);
+
     %% Add zeros to the end of y based on how big tau is
     y = [y;zeros(tau*fs_high,1)];
+
     %% Cut of the delay and chirp in the start of the signal
     y = y(length(chirp_signal) + tau*fs_high+ 1:end);
-    %% Get the amplitude of the chip signal
+
+    %% Autocorrelate the chirp-signal and correct the amplitude of the signal
     autocorrelation = xcorr(chirp_signal);
     [max_val_auto, max_index_auto] = max(abs(autocorrelation));
+    % Get the amplitude scaling
     A = (corr(max_peak_index)/autocorrelation(max_index_auto));
+    % Revert the amplitude scaling
     y = y.*(1/(A));
+
     %% Demodulate the signal
     t = Ts_high*(0:(length(y)-1)).'; % get the new time vector
     % Apply the carrier for demodulation
@@ -55,6 +67,7 @@ function [zI, zQ, A, tau] = receiver(y)
     % Remove the zeroes at the start of the signal
     yI_demodulated = yI(order/2+1:end);
     yQ_demodulated = yQ(order/2+1:end);
+
     %% Downsample
     zI = downsample(yI_demodulated, upsampling_factor);
     zQ = downsample(yQ_demodulated, upsampling_factor);
@@ -66,6 +79,7 @@ function [zI, zQ, A, tau] = receiver(y)
     %% Return values with correct output
     tau = tau*1000000; %Convert to mu s
     A = round(A,1);
+
     %% Print outut
     fprintf('%s %.1f %s\n', 'tau = ', tau, 'mu s')
     fprintf('%s %.1f\n', 'A = ', A);
