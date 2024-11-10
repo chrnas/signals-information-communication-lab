@@ -1,8 +1,8 @@
 function [zI, zQ, A, tau] = receiver(y)
     format bank
     %% Initiate variables
-    f_low = 20000;     % Lower cutoff frequency
-    f_high = 40000;    % Higher cutoff frequency
+    f_low = 80000;     % Lower cutoff frequency
+    f_high = 100000;    % Higher cutoff frequency
     fs_low = 20000;        % Sampling frequency
     upsampling_factor = 20;
     fc = (f_low + f_high) / 2; % Carrier frequency
@@ -10,7 +10,7 @@ function [zI, zQ, A, tau] = receiver(y)
     fs_high = fs_low * upsampling_factor;     % Upsampled sampling frequency
     Ts_low = 1 / fs_low;        % Sampling period time
     Ts_high = 1 / fs_high;  % Upsampled sampling period time
-    order = 200;
+    order = 500;
     %% Create bandpass filter
     bpf_margin = 0.9;
     [b,a] = fir1(order,[fc-bandwidth*bpf_margin,fc+bandwidth*bpf_margin]/(fs_high/2),"bandpass");
